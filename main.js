@@ -2,15 +2,30 @@ let form = document.querySelector('.todo-control'),
     list = document.querySelector('.todo-list'),
     completed = document.querySelector('.todo-completed'),
     todo_container = document.querySelector('.todo-container'),
-    obj,
-    idCount = 0;
+    obj;
 
-if(localStorage.userTasks == undefined) {
+if(getCookie('userTasks') == undefined) {
     obj = [];
-    idCount = 0;
 } else {
-    obj = JSON.parse(localStorage.userTasks);
-    idCount = localStorage.idCount;
+    obj = JSON.parse(getCookie('userTasks'));
+}
+
+function getCookie(name) {
+    let matches = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"));
+    return matches ? decodeURIComponent(matches[1]) : undefined;
+}
+
+function setCookie(key, value, year, month, day, path, domain, sequre) {
+    let cookieData = `${key}=${value}; `;
+    if(year) {
+        let date = new Date(year, month, day);
+        cookieData+=`expires=${date.toGMTString()}`;
+    }
+    cookieData+= path ? `; path=${path}` : ``;
+    cookieData+= domain ? `; domain=${domain}` : ``;
+    cookieData+= sequre ? sequre : ``;
+
+    document.cookie = cookieData;
 }
 
 const render = () => {
@@ -31,7 +46,7 @@ const render = () => {
             list.append(li);
         }
     });
-    localStorage.userTasks = JSON.stringify(obj);
+    setCookie('userTasks',JSON.stringify(obj), 2025, 1, 1);
 }
 render();
 
@@ -41,20 +56,17 @@ form.addEventListener('submit', (event) => {
     if(!inputValue.value) return;
     let newObj = {
         value: inputValue.value,
-        completed: false,
-        id: idCount
+        completed: false
     }
     obj.push(newObj);
     render();
     inputValue.value = '';
-    localStorage.idCount = ++idCount;
 });
 
 function search(elem) {
-    let id = elem.id;
     for(let i = 0; i < obj.length; i++) {
-        if(obj[i].id == +id) {
-            return i;
+        if(obj[i].value === elem.querySelector('span').textContent) {
+            return i
         }
     };
 }
@@ -68,7 +80,7 @@ todo_container.addEventListener('click', () => {
         render();
     } else if(event.target.classList.contains('todo-complete')) {
         let index = search(event.target.closest('li'));
-        obj[index].completed ? obj[index].completed = false : obj[index].completed = true;
+        obj[index].completed = !obj[index].completed;
         render();
     }
 });
